@@ -1,7 +1,7 @@
+# Dockerfile version: 0.1
 # Base image: Ubuntu 24.04 LTS
 FROM ubuntu:24.04
 
-# Non-interactive installs and basic environment
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -18,33 +18,41 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a virtual environment for Python packages
-RUN python3 -m venv /opt/venv
+# Create a virtual environment and ensure pip exists/up-to-date
+RUN python3 -m venv /opt/venv && \
+    /opt/venv/bin/python -m ensurepip --upgrade
 
-# Make sure venv python/pip are used by default
+# Use venv Python and pip by default
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Upgrade pip inside the virtual environment
 RUN pip install --upgrade pip
 
-# Install JupyterLab and classic Jupyter Notebook in the venv
+# Install JupyterLab and classic Jupyter Notebook (pinned major versions)
 RUN pip install --no-cache-dir \
-    jupyterlab \
-    notebook
+    "jupyterlab==4.*" \
+    "notebook==7.*"
 
-# Optional: pre-build JupyterLab assets (can be skipped if not needed)
+# Optional: pre-build JupyterLab assets
 RUN jupyter lab build || true
 
 # Create a non-root user to run Jupyter
 RUN useradd -m -s /bin/bash jupyter
 
+# Copy entrypoint script and make it executable
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Switch to the new user
 USER jupyter
 WORKDIR /home/jupyter
-# Expose Jupyter default port
+
+# Expose Jupyter port
 EXPOSE 8080
 
-# Default command: start JupyterLab
-# NOTE: This disables auth (token/password) for convenience inside Docker.
-# For production use, configure proper authentication.
-CMD ["bash", "-lc", "jupyter lab --ip=0.0.0.0 --port=8080 --no-browser --notebook-dir=/home/jupyter --ServerApp.token='' --ServerApp.password=''"]
+# Optional: persist notebooks across runs
+# VOLUME ["/home/jupyter"]
+
+# Use entrypoint; default mode = lab
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["lab"]
