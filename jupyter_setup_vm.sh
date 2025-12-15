@@ -42,15 +42,17 @@ esac
 # 1. Install system dependencies
 ###############################################################################
 
-echo "==> Installing system dependencies (python3, venv, build tools, etc.)..."
+echo "==> Installing system dependencies (python3-full, build tools, etc.)..."
 apt-get update
 apt-get install -y \
-    python3 \
-    python3-venv \
+    python3-full \
     python3-dev \
     build-essential \
     curl \
     ca-certificates
+
+# At this point, python3-full provides the venv module:
+#   python3 -m venv ...
 
 ###############################################################################
 # 2. Create non-root Jupyter user (if not exists)
@@ -90,7 +92,6 @@ if [[ ! -d "$VENV_DIR" ]]; then
         "notebook==7.*"
 
     echo "==> (Optional) Pre-building JupyterLab assets..."
-    # Run as root here; it only compiles/builds assets in the venv
     "$VENV_DIR/bin/jupyter" lab build || true
 else
     echo "==> Virtual environment already exists at $VENV_DIR. Skipping creation and install."
@@ -105,7 +106,6 @@ echo "    Notebook directory: $NOTEBOOK_DIR"
 echo "    Virtualenv:         $VENV_DIR"
 echo
 
-# Build the command to run as the jupyter user
 if [[ "$MODE" == "lab" ]]; then
     JUPYTER_CMD="PATH=$VENV_DIR/bin:\$PATH jupyter lab \
         --ip=0.0.0.0 \
@@ -128,5 +128,4 @@ echo "==> Running as user '$JUPYTER_USER'..."
 echo "    To stop Jupyter, press Ctrl+C in this terminal."
 echo
 
-# Use 'su -' to get a login shell with the user's environment
 exec su - "$JUPYTER_USER" -c "$JUPYTER_CMD"
