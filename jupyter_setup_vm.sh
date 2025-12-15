@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Monolithic installer + launcher for JupyterLab / Jupyter Notebook
-# Target OS: Ubuntu 24.04 LTS
+# Target OS: Ubuntu 24.04 LTS (e.g., AWS EC2)
 #
 # Usage:
 #   sudo ./jupyter_setup_vm.sh           # default: lab on port 8080
@@ -9,7 +9,7 @@
 #   sudo ./jupyter_setup_vm.sh notebook
 #
 # Optional environment variables:
-#   PORT=9090 ./jupyter_setup_vm.sh lab
+#   PORT=9090 sudo ./jupyter_setup_vm.sh lab
 
 set -euo pipefail
 
@@ -42,17 +42,17 @@ esac
 # 1. Install system dependencies
 ###############################################################################
 
-echo "==> Installing system dependencies (python3-full, build tools, etc.)..."
+echo "==> Installing system dependencies (python3, python3.12-venv, build tools, etc.)..."
 apt-get update
+
+# python3.12-venv provides the venv module for the default Python 3.12 on Ubuntu 24.04
 apt-get install -y \
-    python3-full \
+    python3 \
+    python3.12-venv \
     python3-dev \
     build-essential \
     curl \
     ca-certificates
-
-# At this point, python3-full provides the venv module:
-#   python3 -m venv ...
 
 ###############################################################################
 # 2. Create non-root Jupyter user (if not exists)
